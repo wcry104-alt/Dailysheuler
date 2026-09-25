@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ascent — Growth Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12141c; --surface:#1b1e2b; --surface2:#232739; --line:#2c3145;
+  --text:#edeff7; --muted:#8890a6;
+  --gold:#e8b44c; --green:#4ade80; --red:#f0654c;
+  --disp:'Sora',sans-serif; --mono:'JetBrains Mono',monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--text);
+  font-family:var(--disp); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:960px; margin:0 auto; padding:28px 18px 60px;}
+header.top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:22px; flex-wrap:wrap;}
+header.top h1{font-size:22px; font-weight:800; margin:0; letter-spacing:-0.02em;}
+header.top p{margin:2px 0 0; color:var(--muted); font-size:13px;}
+
+/* League hero */
+.league-card{
+  background:linear-gradient(135deg,var(--surface),var(--surface2));
+  border:1px solid var(--line); border-radius:18px; padding:20px 22px;
+  display:flex; align-items:center; gap:18px; margin-bottom:18px; flex-wrap:wrap;
+}
+.badge{
+  width:64px; height:64px; border-radius:14px; flex:none;
+  display:flex; align-items:center; justify-content:center; font-size:30px;
+  background:radial-gradient(circle at 30% 25%, var(--tier-a), var(--tier-b));
+  box-shadow:0 6px 18px -6px var(--tier-a);
+}
+.league-info{flex:1; min-width:200px;}
+.league-info .name{font-size:19px; font-weight:700;}
+.league-info .sub{color:var(--muted); font-size:12.5px; font-family:var(--mono); margin-top:2px;}
+.bar-track{height:8px; border-radius:5px; background:var(--line); margin-top:10px; overflow:hidden;}
+.bar-fill{height:100%; background:linear-gradient(90deg,var(--gold),#f6d488); border-radius:5px; transition:width .5s ease;}
+.stars-total{text-align:right; font-family:var(--mono);}
+.stars-total .n{font-size:26px; font-weight:700; color:var(--gold);}
+.stars-total .l{font-size:11px; color:var(--muted); letter-spacing:.02em;}
+
+/* layout */
+.grid{display:grid; grid-template-columns:1fr; gap:18px;}
+@media(min-width:760px){.grid{grid-template-columns:1.5fr 1fr;}}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px;}
+.panel h2{font-size:14px; margin:0 0 12px; font-weight:600; color:var(--muted);}
+
+/* calendar */
+.cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+.cal-head .m{font-weight:700; font-size:16px;}
+.cal-head button{
+  background:var(--surface2); border:1px solid var(--line); color:var(--text);
+  border-radius:8px; width:30px; height:30px; cursor:pointer; font-size:15px;
+}
+.cal-head button:hover{background:var(--line);}
+.dow{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px;}
+.dow span{text-align:center; font-size:10.5px; color:var(--muted); font-family:var(--mono);}
+.days{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+.day{
+  aspect-ratio:1; border-radius:10px; background:var(--surface2); border:1px solid var(--line);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  cursor:pointer; position:relative; transition:transform .12s ease, border-color .12s ease;
+}
+.day:hover{border-color:var(--gold); transform:translateY(-1px);}
+.day.empty{background:transparent; border-color:transparent; cursor:default;}
+.day.empty:hover{transform:none; border-color:transparent;}
+.day .num{font-size:12px; font-family:var(--mono); color:var(--muted);}
+.day .arrow{font-size:15px; font-weight:700; line-height:1;}
+.day.today{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset;}
+.up1{color:var(--green);} .up2{color:var(--green); text-shadow:0 0 8px rgba(74,222,128,.5);}
+.eq{color:var(--muted);} .down{color:var(--red);}
+
+/* league ladder */
+.ladder-item{display:flex; align-items:center; gap:10px; padding:8px 6px; border-radius:10px;}
+.ladder-item.active{background:var(--surface2); border:1px solid var(--gold);}
+.ladder-item .dot{width:10px; height:10px; border-radius:50%; flex:none;}
+.ladder-item .nm{flex:1; font-size:13px;}
+.ladder-item .rg{font-family:var(--mono); font-size:11px; color:var(--muted);}
+
+/* leaderboard */
+.lb-row{display:flex; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid var(--line);}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{width:22px; text-align:center; font-family:var(--mono); font-weight:700; color:var(--gold); font-size:13px;}
+.lb-name{flex:1; font-size:13.5px;}
+.lb-week{font-size:11px; color:var(--muted); font-family:var(--mono);}
+.lb-stars{font-family:var(--mono); font-weight:700; color:var(--gold); font-size:13px;}
+.empty-note{color:var(--muted); font-size:12.5px; padding:6px 2px;}
+
+/* modal */
+.overlay{position:fixed; inset:0; background:rgba(8,9,14,.72); display:none; align-items:flex-end; justify-content:center; z-index:50; padding:0;}
+.overlay.show{display:flex;}
+@media(min-width:600px){.overlay{align-items:center;}}
+.modal{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px 18px 0 0; width:100%; max-width:440px;
+  padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px)); max-height:85vh; overflow-y:auto;
+}
+@media(min-width:600px){.modal{border-radius:18px;}}
+.modal h3{margin:0 0 3px; font-size:17px;}
+.modal .dsub{color:var(--muted); font-size:12.5px; font-family:var(--mono); margin-bottom:16px;}
+.chip{
+  display:flex; align-items:center; justify-content:space-between; padding:11px 13px; margin-bottom:8px;
+  border-radius:11px; border:1px solid var(--line); background:var(--surface2); cursor:pointer; user-select:none;
+}
+.chip.on{border-color:var(--green); background:rgba(74,222,128,.08);}
+.chip .cn{font-size:14px;}
+.chip .ck{width:20px; height:20px; border-radius:6px; border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:12px; flex:none;}
+.chip.on .ck{background:var(--green); border-color:var(--green); color:#0d1117;}
+.modal-foot{display:flex; align-items:center; justify-content:space-between; margin-top:14px; gap:10px;}
+.dayscore{font-family:var(--mono); font-size:12.5px; color:var(--muted);}
+.btn{background:var(--gold); color:#1a1204; border:none; border-radius:10px; padding:11px 18px; font-weight:700; cursor:pointer; font-size:13.5px;}
+.btn:active{transform:scale(.97);}
+.close-x{position:absolute; top:14px; right:16px; background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;}
+.modal{position:relative;}
+.rule-note{font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Ascent</h1>
+      <p>Track it daily. Watch the trend, not the excuse.</p>
+    </div>
+  </header>
+
+  <div class="league-card" id="leagueCard">
+    <div class="badge" id="badge"></div>
+    <div class="league-info">
+      <div class="name" id="leagueName">—</div>
+      <div class="sub" id="leagueSub">—</div>
+      <div class="bar-track"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+    </div>
+    <div class="stars-total">
+      <div class="n" id="starTotal">0</div>
+      <div class="l">TOTAL ★</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="cal-head">
+        <button id="prevM">‹</button>
+        <div class="m" id="monthLabel"></div>
+        <button id="nextM">›</button>
+      </div>
+      <div class="dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="days" id="daysGrid"></div>
+      <div class="rule-note">0 done → ⇊ −2★ &nbsp;·&nbsp; 1 done → = 0★ &nbsp;·&nbsp; 2+ done → ↑/⇈ and 0.5★ per item</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:18px;">
+      <div class="panel">
+        <h2>League ladder</h2>
+        <div id="ladder"></div>
+      </div>
+      <div class="panel">
+        <h2>Weekly leaderboard</h2>
+        <div id="leaderboard"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close-x" id="closeModal">✕</button>
+    <h3 id="modalDate">—</h3>
+    <div class="dsub">Tap what you actually did today</div>
+    <div id="chipList"></div>
+    <div class="modal-foot">
+      <div class="dayscore" id="dayScoreLabel">0 / 7 done</div>
+      <button class="btn" id="saveDay">Save day</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SKILLS = ['C++','DSA','JavaScript','Java','Python','Cybersecurity','Behaviour'];
+const STORE_KEY = 'ascent_days_v1';
+const LEAGUES = [
+  {name:'Bronze Coder', min:0,   a:'#8a5a3c', b:'#c98a5e'},
+  {name:'Silver Coder', min:15,  a:'#8a95a6', b:'#dfe6ee'},
+  {name:'Gold Coder',   min:35,  a:'#c9932f', b:'#f3cf6b'},
+  {name:'Platinum Coder',min:60, a:'#4fb3a9', b:'#a6ece3'},
+  {name:'Diamond Coder',min:100, a:'#5b7fe0', b:'#b6c9ff'},
+  {name:'Grandmaster',  min:150, a:'#c94fd0', b:'#f0b6f5'},
+];
+const ICONS = ['🥉','🥈','🥇','💠','♦️','👑'];
+
+let data = {};
+try{ data = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }catch(e){ data = {}; }
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){} }
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function keyFor(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+
+function dayResult(list){
+  const n = (list||[]).length;
+  if(n===0) return {stars:-2, arrow:'⇊', cls:'down', label:'Rough day'};
+  if(n===1) return {stars:0, arrow:'=', cls:'eq', label:'Even'};
+  const stars = n * 0.5; // 2 done=1★, 3=1.5★, 4=2★, 5=2.5★, 6=3★, 7=3.5★
+  if(n<=4) return {stars, arrow:'↑', cls:'up1', label:'Good day'};
+  return {stars, arrow:'⇈', cls:'up2', label:'Great day'};
+}
+
+function getStartDate(){
+  const keys = Object.keys(data);
+  if(keys.length===0) return null;
+  return keys.sort()[0];
+}
+function startOfToday(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+function isBeforeToday(key){
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y,m-1,d) < startOfToday();
+}
+// Returns the scored result for a day: explicit entry, a missed (never-opened) past
+// day within the tracked range, or null if it's today/future and not yet logged.
+function effectiveResult(key){
+  if(data[key] !== undefined) return dayResult(data[key]);
+  const start = getStartDate();
+  if(start && key >= start && isBeforeToday(key)) return dayResult([]); // missed day
+  return null;
+}
+
+function totalStars(){
+  const start = getStartDate();
+  if(!start) return 0;
+  const [sy,sm,sd] = start.split('-').map(Number);
+  let d = new Date(sy, sm-1, sd);
+  const today = startOfToday();
+  let t = 0;
+  while(d < today){
+    t += effectiveResult(keyFor(d.getFullYear(), d.getMonth(), d.getDate())).stars;
+    d.setDate(d.getDate()+1);
+  }
+  const todayKey = keyFor(today.getFullYear(), today.getMonth(), today.getDate());
+  if(data[todayKey] !== undefined) t += dayResult(data[todayKey]).stars;
+  return Math.max(0, t);
+}
+
+function currentLeague(total){
+  let idx = 0;
+  for(let i=0;i<LEAGUES.length;i++){ if(total >= LEAGUES[i].min) idx = i; }
+  return idx;
+}
+
+function renderLeague(){
+  const total = totalStars();
+  const idx = currentLeague(total);
+  const cur = LEAGUES[idx];
+  const next = LEAGUES[idx+1];
+  document.getElementById('starTotal').textContent = Number.isInteger(total) ? total : total.toFixed(1);
+  document.getElementById('leagueName').textContent = cur.name;
+  document.getElementById('badge').textContent = ICONS[idx];
+  document.getElementById('badge').style.setProperty('--tier-a', cur.a);
+  document.getElementById('badge').style.setProperty('--tier-b', cur.b);
+  if(next){
+    const span = next.min - cur.min;
+    const into = total - cur.min;
+    document.getElementById('leagueSub').textContent = `${next.min - total}★ to reach ${next.name}`;
+    document.getElementById('barFill').style.width = Math.min(100, (into/span)*100) + '%';
+  } else {
+    document.getElementById('leagueSub').textContent = 'Top league reached';
+    document.getElementById('barFill').style.width = '100%';
+  }
+
+  const ladder = document.getElementById('ladder');
+  ladder.innerHTML = '';
+  LEAGUES.forEach((L,i)=>{
+    const row = document.createElement('div');
+    row.className = 'ladder-item' + (i===idx ? ' active' : '');
+    const rangeTxt = LEAGUES[i+1] ? `${L.min}–${LEAGUES[i+1].min - 1}★` : `${L.min}★+`;
+    row.innerHTML = `<span class="dot" style="background:${L.a}"></span><span class="nm">${L.name}</span><span class="rg">${rangeTxt}</span>`;
+    ladder.appendChild(row);
+  });
+}
+
+let viewY, viewM;
+function renderCalendar(){
+  const today = new Date();
+  document.getElementById('monthLabel').textContent =
+    new Date(viewY, viewM, 1).toLocaleString('en', {month:'long', year:'numeric'});
+  const grid = document.getElementById('daysGrid');
+  grid.innerHTML = '';
+  const firstDow = new Date(viewY, viewM, 1).getDay();
+  const daysInMonth = new Date(viewY, viewM+1, 0).getDate();
+  for(let i=0;i<firstDow;i++){
+    const e = document.createElement('div'); e.className='day empty'; grid.appendChild(e);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const key = keyFor(viewY, viewM, d);
+    const res = effectiveResult(key);
+    const cell = document.createElement('div');
+    cell.className = 'day';
+    if(viewY===today.getFullYear() && viewM===today.getMonth() && d===today.getDate()) cell.classList.add('today');
+    const showArrow = res ? `<span class="arrow ${res.cls}">${res.arrow}</span>` : '';
+    cell.innerHTML = `<span class="num">${d}</span>${showArrow}`;
+    cell.addEventListener('click', ()=> openModal(viewY, viewM, d));
+    grid.appendChild(cell);
+  }
+}
+
+function renderLeaderboard(){
+  const daysInMonth = new Date(viewY, viewM+1, 0).getDate();
+  const weeks = {};
+  for(let d=1; d<=daysInMonth; d++){
+    const key = keyFor(viewY, viewM, d);
+    const res = effectiveResult(key);
+    if(!res) continue;
+    const wk = Math.ceil((d + new Date(viewY,viewM,1).getDay())/7);
+    weeks[wk] = (weeks[wk] || 0) + res.stars;
+  }
+  const rows = Object.keys(weeks).map(w=>({week:w, stars: Math.max(0,weeks[w])}))
+    .sort((a,b)=> b.stars - a.stars);
+  const box = document.getElementById('leaderboard');
+  box.innerHTML = '';
+  if(rows.length===0){
+    box.innerHTML = '<div class="empty-note">No tracked days this month yet — log today to open the board.</div>';
+    return;
+  }
+  rows.forEach((r,i)=>{
+    const row = document.createElement('div');
+    row.className = 'lb-row';
+    const wTxt = Number.isInteger(r.stars) ? r.stars : r.stars.toFixed(1);
+    row.innerHTML = `<span class="lb-rank">#${i+1}</span><span class="lb-name">Week ${r.week}<div class="lb-week">vs your other weeks</div></span><span class="lb-stars">${wTxt}★</span>`;
+    box.appendChild(row);
+  });
+}
+
+function renderAll(){ renderCalendar(); renderLeague(); renderLeaderboard(); }
+
+// modal
+let modalKey = null;
+let modalSel = new Set();
+function openModal(y,m,d){
+  modalKey = keyFor(y,m,d);
+  modalSel = new Set(data[modalKey] || []);
+  document.getElementById('modalDate').textContent =
+    new Date(y,m,d).toLocaleDateString('en', {weekday:'long', month:'long', day:'numeric'});
+  const list = document.getElementById('chipList');
+  list.innerHTML = '';
+  SKILLS.forEach(sk=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (modalSel.has(sk) ? ' on' : '');
+    chip.innerHTML = `<span class="cn">${sk}</span><span class="ck">${modalSel.has(sk)?'✓':''}</span>`;
+    chip.addEventListener('click', ()=>{
+      if(modalSel.has(sk)) modalSel.delete(sk); else modalSel.add(sk);
+      chip.classList.toggle('on');
+      chip.querySelector('.ck').textContent = modalSel.has(sk) ? '✓' : '';
+      updateDayScoreLabel();
+    });
+    list.appendChild(chip);
+  });
+  updateDayScoreLabel();
+  document.getElementById('overlay').classList.add('show');
+}
+function updateDayScoreLabel(){
+  const n = modalSel.size;
+  const res = dayResult([...modalSel]);
+  const sTxt = Number.isInteger(res.stars) ? res.stars : res.stars.toFixed(1);
+  document.getElementById('dayScoreLabel').textContent = `${n} / 7 done — ${res.label} (${res.stars>=0?'+':''}${sTxt}★)`;
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+document.getElementById('closeModal').addEventListener('click', closeModal);
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+document.getElementById('saveDay').addEventListener('click', ()=>{
+  data[modalKey] = [...modalSel];
+  save();
+  closeModal();
+  renderAll();
+});
+
+document.getElementById('prevM').addEventListener('click', ()=>{
+  viewM--; if(viewM<0){viewM=11; viewY--;} renderCalendar(); renderLeaderboard();
+});
+document.getElementById('nextM').addEventListener('click', ()=>{
+  viewM++; if(viewM>11){viewM=0; viewY++;} renderCalendar(); renderLeaderboard();
+});
+
+(function init(){
+  const now = new Date();
+  viewY = now.getFullYear(); viewM = now.getMonth();
+  renderAll();
+})();
+</script>
+</body>
+</html>
